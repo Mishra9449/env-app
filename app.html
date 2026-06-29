@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Env Monitor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #1a1a2e; min-height: 100vh; color: #fff; padding: 20px; }
+    .header { text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; margin-bottom: 20px; }
+    .header h1 { font-size: 1.5em; color: #00d4ff; }
+    .header p { color: #aaa; margin-top: 5px; font-size: 0.9em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; margin: 0 auto; }
+    .card { background: rgba(255,255,255,0.08); border-radius: 15px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+    .card.temp { border-left: 4px solid #ff6b6b; }
+    .card.humid { border-left: 4px solid #51cf66; }
+    .card.wind { border-left: 4px solid #ffa94d; }
+    .card.time { border-left: 4px solid #74c0fc; grid-column: span 2; }
+    .label { font-size: 0.85em; color: #888; text-transform: uppercase; }
+    .value { font-size: 2em; font-weight: bold; margin: 10px 0; }
+    .unit { font-size: 0.9em; color: #aaa; }
+    .alert-bar { max-width: 500px; margin: 20px auto 0; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
+    .alert-bar.ok { background: rgba(81,207,102,0.2); color: #51cf66; border: 1px solid #51cf66; }
+    .alert-bar.danger { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }
+    .alert-bar.offline { background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid #ffa500; }
+    .update-info { text-align: center; color: #555; margin-top: 15px; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ENV MONITOR</h1>
+    <p id="timeDisplay">Loading...</p>
+  </div>
+  <div class="grid">
+    <div class="card temp">
+      <div class="label">TEMPERATURE</div>
+      <div class="value" id="tempVal">--</div>
+      <div class="unit">deg C</div>
+    </div>
+    <div class="card humid">
+      <div class="label">HUMIDITY</div>
+      <div class="value" id="humidVal">--</div>
+      <div class="unit">%</div>
+    </div>
+    <div class="card wind">
+      <div class="label">WIND SPEED</div>
+      <div class="value" id="windVal">--</div>
+      <div class="unit">m/s</div>
+    </div>
+    <div class="card time">
+      <div class="label">DEVICE STATUS</div>
+      <div class="value" style="font-size: 1.2em; color: #51cf66;" id="statusVal">Connecting...</div>
+    </div>
+  </div>
+  <div class="alert-bar ok" id="alertBar">All Parameters Normal</div>
+  <div class="update-info">Checks for new data every 2 seconds</div>
+
+  <script>
+    const DB_URL = "https://envmonitor-bc5c8-default-rtdb.asia-southeast1.firebasedatabase.app/envmonitor.json";
+    
+    let lastDataString = "";
+    let lastAliveTime = Date.now();
+
+    function updateData() {
+      fetch(DB_URL).then(r => r.json()).then(data => {
+        if(data) {
+          // Update the screen with new numbers
+          document.getElementById("tempVal").textContent = data.temp;
+          document.getElementById("humidVal").textContent = data.humid;
+          document.getElementById("windVal").textContent = data.wind;
+          document.getElementById("timeDisplay").textContent = data.dateTime;
+          
+          // Heartbeat check: Did the data actually change?
+          let currentDataString = data.temp + "," + data.humid + "," + data.wind;
+          if (currentDataString !== lastDataString) {
+            lastDataString = currentDataString;
+            lastAliveTime = Date.now(); // Reset the timer
+          }
+
+          // Check if data is stale (older than 15 seconds)
+          let timeSinceLastUpdate = (Date.now() - lastAliveTime) / 1000;
+          var statusEl = document.getElementById("statusVal");
+          
+          if (timeSinceLastUpdate > 15) {
+            statusEl.textContent = "Device Offline";
+            statusEl.style.color = "#ff6b6b";
+          } else {
+            statusEl.textContent = "Live";
+            statusEl.style.color = "#51cf66";
+          }
+
+          // Handle Alerts
+          var a = document.getElementById("alertBar");
+          if(data.alertActive) { a.className = "alert-bar danger"; a.innerHTML = "WARNING: " + data.alert; }
+          else { a.className = "alert-bar ok"; a.innerHTML = "All Parameters Normal"; }
+        }
+      }).catch(e => {
+        document.getElementById("statusVal").textContent = "No Internet";
+        document.getElementById("statusVal").style.color = "#ff6b6b";
+      });
+    }
+    
+    setInterval(updateData, 2000);
+    updateData();
+  </script>
+</body>
+</html>

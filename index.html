@@ -81,11 +81,11 @@
             lastAliveTime = Date.now(); 
           }
 
-          // Check if data is stale (older than 15 seconds)
+          // Check if data is stale (older than 2 seconds)
           let timeSinceLastUpdate = (Date.now() - lastAliveTime) / 1000;
           var statusEl = document.getElementById("statusVal");
           
-          if (timeSinceLastUpdate > 15) {
+          if (timeSinceLastUpdate > 2) {
             statusEl.textContent = "Device Offline";
             statusEl.style.color = "#ff6b6b";
           } else {

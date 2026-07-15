@@ -58,7 +58,7 @@
     </div>
   </div>
   <div class="alert-bar ok" id="alertBar">✅ All Parameters Normal</div>
-  <div class="update-info">Auto-refreshes every 2 seconds</div>
+  <div class="update-info">Auto-refreshes every 1 seconds</div>
 
   <script>
     const DB_URL = "https://envmonitor-bc5c8-default-rtdb.asia-southeast1.firebasedatabase.app/envmonitor.json";
@@ -81,11 +81,11 @@
             lastAliveTime = Date.now(); 
           }
 
-          // Check if data is stale (older than 2 seconds)
+          // Check if data is stale (older than 5 seconds)
           let timeSinceLastUpdate = (Date.now() - lastAliveTime) / 1000;
           var statusEl = document.getElementById("statusVal");
           
-          if (timeSinceLastUpdate > 2) {
+          if (timeSinceLastUpdate > 5) {
             statusEl.textContent = "Device Offline";
             statusEl.style.color = "#ff6b6b";
           } else {
@@ -104,7 +104,7 @@
       });
     }
     
-    setInterval(updateData, 2000);
+    setInterval(updateData, 1000);
     updateData();
   </script>
 </body>
